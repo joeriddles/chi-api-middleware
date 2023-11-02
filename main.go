@@ -11,12 +11,18 @@ import (
 func main() {
 	r := chi.NewRouter()
 
-	r.Use(ApiMiddleware)
+	r.Use(ApiMiddleware(r))
 
 	r.Use(middleware.RequestID)
-	// r.Use(middleware.Logger)
+	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	addRoutes(r)
+
+	http.ListenAndServe(":8000", r)
+}
+
+func addRoutes(r chi.Router) chi.Router {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hello world"))
 	})
@@ -29,17 +35,20 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("hello %s", r.URL.Query().Get("name"))))
 	})
 
-	http.ListenAndServe(":8000", r)
+	return r
 }
 
-func ApiMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		api := chi.RouteContext(r.Context()).RoutePattern()
-		fmt.Printf("before: api=%s\n", api)
+func ApiMiddleware(router chi.Router) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rctx := chi.NewRouteContext()
+			path := r.URL.Path
+			op := r.Method
+			api := router.Find(rctx, op, path)
 
-		next.ServeHTTP(w, r)
+			fmt.Printf("api=%s\n", api)
 
-		api = chi.RouteContext(r.Context()).RoutePattern()
-		fmt.Printf("after: api=%s\n", api)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
