@@ -27,7 +27,7 @@ func addRoutes(r chi.Router) chi.Router {
 	})
 
 	r.Get("/hello/{name}", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(fmt.Sprintf("hello %s", r.URL.Query().Get("name"))))
+		w.Write([]byte(fmt.Sprintf("hello, %s", chi.URLParam(r, "name"))))
 	})
 
 	return r
