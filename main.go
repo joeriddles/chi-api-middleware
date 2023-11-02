@@ -5,17 +5,12 @@ import (
 	"net/http"
 
 	chi "github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 	r := chi.NewRouter()
 
 	r.Use(ApiMiddleware(r))
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
 
 	addRoutes(r)
 
@@ -38,6 +33,7 @@ func addRoutes(r chi.Router) chi.Router {
 	return r
 }
 
+// Middleware that prints the API before the request is handled
 func ApiMiddleware(router chi.Router) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
